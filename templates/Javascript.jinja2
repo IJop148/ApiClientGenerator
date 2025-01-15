@@ -1,0 +1,13 @@
+export class {{ sanitize_name(info.title) }} {
+    constructor(baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+    
+    async request(endpoint, options = {}) {
+        const response = await fetch(`{{'${this.baseUrl}/${endpoint}'}}`, options);
+        return response.json();
+    }
+
+    {{ generate_api_methods }}
+}
+export default {{ sanitize_name(info.title) }};
