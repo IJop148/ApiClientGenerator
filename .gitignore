@@ -1,0 +1,6 @@
+ApiClientGenerator/ToBeGenerated/*
+ApiClientGenerator/Output/*
+
+*.pyc
+
+.venv

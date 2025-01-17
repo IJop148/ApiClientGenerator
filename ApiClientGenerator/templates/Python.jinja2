@@ -1,0 +1,27 @@
+{{ "\n".join(Imports) }}
+
+{{ Enum }}
+
+{{ DataClass }}
+
+class ApiClient:
+    def __init__(self, base_url: str, headers: Optional[Dict[str, str]] = None, ssl_verify: bool = True):
+        self.base_url = base_url
+        self.headers = headers or {}
+        self.ssl_verify = ssl_verify
+    
+    def _request(self, method: str, path: str, response_model, **kwargs) -> Any:    
+        url = f"{self.base_url}{path}"
+        headers = self.headers.copy()
+        headers.update(kwargs.pop("headers", {}))
+        response = httpx.request(method, url, headers=headers, verify=self.ssl_verify, **kwargs)
+        response.raise_for_status()
+        if(response_model == None or response_model == Any):
+            return response.json()
+        else:
+            return from_dict(data_class=response_model, data=response.json())
+
+    
+    {{ Methods }}
+
+
