@@ -9,7 +9,6 @@ class TestMain(unittest.TestCase):
     def setUp(self) -> None:
         pass
     
-    
     @patch('builtins.open', new_callable=mock_open, read_data="{}")
     @patch('main.P')
     @patch("json.load")
@@ -154,6 +153,51 @@ class TestMain(unittest.TestCase):
             expected_output = f.read()
         
         self.assertEqual(output, expected_output)
+
+    @patch('main.glob')
+    @patch('main.os.makedirs')
+    @patch('builtins.open', new_callable=mock_open, read_data="{}")
+    @patch('main.P')
+    @patch("json.load")
+    @patch("Generators.os")
+    def test_main_with_custom_folders(self, mock_generators_mock:MagicMock, mock_json_load: MagicMock, Python_Generator: MagicMock, mock_open: MagicMock, mock_makedirs: MagicMock, mock_glob: MagicMock) -> None:
+        mock_glob.return_value = ["custom_input/test.json"]
+        mock_json_load.return_value = {
+            "openapi": "3.0.0",
+            "info": {
+                "title": "API",
+                "version": "1.0.0"
+            },
+            "paths": {
+                "/example": {
+                    "get": {
+                        "summary": "Example endpoint",
+                        "responses": {
+                            "200": {
+                                "description": "Successful response"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        mock_open.return_value.read.return_value = json.dumps(mock_json_load.return_value)
+
+        mock_generator_instance = MagicMock(spec=Python)
+        mock_generators_mock.os.path.exists.return_value = False
         
+        Python_Generator.return_value = mock_generator_instance
+        
+        mock_generators_mock.os.path.join = lambda *args: "/".join(args)
+        
+
+        main.main(input_folder="custom_input", output_folder="custom_output")
+
+        mock_open.assert_any_call('custom_input/test.json', 'r')
+        mock_open.assert_any_call('templates/Python.jinja2', 'r')
+        mock_generator_instance.generate.assert_called_once()
+        mock_generators_mock.os.open.assert_any_call("custom_output/API/client.py", "w")
+
 if __name__ == '__main__':
     unittest.main()

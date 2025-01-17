@@ -19,7 +19,11 @@ class ApiClient:
         if(response_model == None or response_model == Any):
             return response.json()
         else:
+            if(type(response_model) == type(List[Any])):
+                print("model: ", response_model.__args__[0])
+                return [from_dict(data_class=response_model.__args__[0], data=item) for item in response.json()]
             return from_dict(data_class=response_model, data=response.json())
+
 
     
     {{ Methods }}

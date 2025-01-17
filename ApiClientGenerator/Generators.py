@@ -1,9 +1,9 @@
 import logging
 import os
 import re
-import Typing
 from jinja2 import Template
-from dacite import from_dict
+
+from . import Typing
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -29,7 +29,11 @@ class Generator:
 
 
 class Python(Generator):
-    
+    def __init__(self, data: Typing.OpenAPI, template: Template, output_folder: str) -> None:
+        super().__init__(data, template)
+        self.output_folder = output_folder
+        logger.debug(f"Initialized Python generator with output folder: {output_folder}")
+
     def generate(self):
         logger.info("Starting Python client generation")
         types_generator = Python.TypeGenerator(self.data)
@@ -80,9 +84,8 @@ class Python(Generator):
         return sorted_type_definitions
 
     def save_client_and_types(self, client_code, type_definitions):
-        output_dir = f"Output/{Generator.sanitize_string(self.data.info.title)}"
-        os.makedirs(output_dir, exist_ok=True)
-        file_path = os.path.join(output_dir, "client.py")
+        os.makedirs(os.path.join(self.output_folder, Generator.sanitize_string(self.data.info.title)), exist_ok=True)
+        file_path = os.path.join(self.output_folder, Generator.sanitize_string(self.data.info.title), "client.py")
         logger.debug(f"Saving client and types at {file_path}")
         with open(file_path, "w") as file:
             file.write(self.template.render(
@@ -131,6 +134,7 @@ class {sanitized_name}:
             """
             
         def get_field_type_from_property(self, field: Typing.Property|Typing.Schema):
+            print(field)
             if isinstance(field, Typing.Schema):
                 return self.get_field_type_from_property(field.properties)
             if field.nullable:
@@ -181,6 +185,9 @@ class {sanitized_name}:
             return methods
         
         def get_field_type_from_property(self, field: Typing.Property):
+            if field.nullable:
+                field.nullable = False
+                return f"Optional[{self.get_field_type_from_property(field)}]"
             if field.ref:
                 return f"'{Generator.sanitize_string(field.ref.split('/')[-1])}'"
             if field.type == "array":

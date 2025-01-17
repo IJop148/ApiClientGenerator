@@ -4,9 +4,11 @@ from glob import glob
 import os
 import logging
 from typing import Any, Dict
-from Generators import Python as P
-import Typing
 from dacite import from_dict, Config
+
+from .Generators import Python as P
+from . import Typing
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -21,11 +23,11 @@ def ref_key_transformer(data: Any) -> Any:
         return data
 
 
-def main() -> None:
+def main(input_folder: str = "ToBeGenerated", output_folder: str = "Output") -> None:
     logger.info("Starting client generation")
     
     # Loop over all the to be generated clients
-    for file in glob("ToBeGenerated/*.json"):
+    for file in glob(f"{input_folder}/*.json"):
         logger.info(f"Processing file: {file}")
         
         # Load the file
@@ -33,18 +35,20 @@ def main() -> None:
             data = json.load(f)
             logger.debug(f"Loaded data: {data}")
             # Modify $ref keys to ref and in keys to in_ recursively
-            
-
             data = ref_key_transformer(data)
             logger.debug(f"Transformed data: {data}")
             config = Config()
             parsed_data = from_dict(data_class=Typing.OpenAPI, data=data, config=config)
 
-        with open("templates/Python.jinja2", "r") as f:
+        # Load the template folder
+        folder_dir = os.path.dirname(os.path.realpath(__file__))
+        logger.debug(f"Folder directory: {folder_dir}")
+
+        with open(os.path.join(folder_dir, "templates","Python.jinja2"), "r") as f:
             template = jinja2.Template(f.read())
         
         # Generate the client
-        generator = P(parsed_data, template)
+        generator = P(parsed_data, template, output_folder)
         generator.generate()
     
 if __name__ == "__main__":
