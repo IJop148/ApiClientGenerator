@@ -5,7 +5,7 @@
 {{ DataClass }}
 
 class ApiClient:
-    def __init__(self, base_url: str, headers: Optional[Dict[str, str]] = None, ssl_verify: bool = True):
+    def __init__(self, base_url: str, headers: Optional[Dict[str, str]] = None, ssl_verify: bool = False):
         self.base_url = base_url
         self.headers = headers or {}
         self.ssl_verify = ssl_verify
@@ -16,13 +16,22 @@ class ApiClient:
         headers.update(kwargs.pop("headers", {}))
         response = httpx.request(method, url, headers=headers, verify=self.ssl_verify, **kwargs)
         response.raise_for_status()
+        if type(response_model) == type:
+            return response_model(response.text)
+        try:
+            data = response.json()
+        except json.JSONDecodeError:
+            data = response.text
         if(response_model == None or response_model == Any):
-            return response.json()
+            return data
+        elif(type(response_model) == type("TypeDefinition") ):
+            return response_model(data)
         else:
+            print(type(response_model))
             if(type(response_model) == type(List[Any])):
                 print("model: ", response_model.__args__[0])
-                return [from_dict(data_class=response_model.__args__[0], data=item) for item in response.json()]
-            return from_dict(data_class=response_model, data=response.json())
+                return [from_dict(data_class=response_model.__args__[0], data=item) for item in data]
+            return from_dict(data_class=response_model, data=data)
 
 
     
