@@ -6,7 +6,7 @@ import logging
 from typing import Any, Dict
 from dacite import from_dict, Config
 
-from .Generators import Python as P
+from .Generators import Python as P, JavaScript as JS
 from . import Typing
 
 
@@ -22,21 +22,31 @@ def ref_key_transformer(data: Any) -> Any:
     else:
         return data
 
+class Settings:
+    Python: Dict[str, bool] = {}
+    Javascript: Dict[str, bool] = {}
 
-def main(input_folder: str = "ToBeGenerated", output_folder: str = "Output") -> None:
+
+def main(input_folder: str|None=None, output_folder:str|None=None, settings: Settings|None=None) -> None:
     logger.info("Starting client generation")
+    
+    if input_folder is None:
+        input_folder = "ToBeGenerated"
+    if output_folder is None:
+        output_folder = "Output"
+    if settings is None:
+        settings = Settings()
     
     # Loop over all the to be generated clients
     for file in glob(f"{input_folder}/*.json"):
         logger.info(f"Processing file: {file}")
-        
+
         # Load the file
         with open(file, "r") as f:
             data = json.load(f)
-            logger.debug(f"Loaded data: {data}")
             # Modify $ref keys to ref and in keys to in_ recursively
             data = ref_key_transformer(data)
-            logger.debug(f"Transformed data: {data}")
+            # logger.debug(f"Transformed data: {data}")
             config = Config()
             parsed_data = from_dict(data_class=Typing.OpenAPI, data=data, config=config)
 
@@ -44,12 +54,22 @@ def main(input_folder: str = "ToBeGenerated", output_folder: str = "Output") -> 
         folder_dir = os.path.dirname(os.path.realpath(__file__))
         logger.debug(f"Folder directory: {folder_dir}")
 
-        with open(os.path.join(folder_dir, "templates","Python.jinja2"), "r") as f:
-            template = jinja2.Template(f.read())
-        
-        # Generate the client
-        generator = P(parsed_data, template, output_folder)
-        generator.generate()
+        file_name = os.path.basename(file)[:-5]
+        print(f"Generating client for {file_name}")
+
+        # Generate Python client if enabled in settings
+        if file_name in settings.Python and settings.Python[file_name]:
+            with open(os.path.join(folder_dir, "templates", "Python.jinja2"), "r") as f:
+                template = jinja2.Template(f.read())
+            generator = P(parsed_data, template, output_folder)
+            generator.generate()
+
+        # Generate JavaScript client if enabled in settings
+        if file_name in settings.Javascript and settings.Javascript[file_name]:
+            with open(os.path.join(folder_dir, "templates", "JavaScript.jinja2"), "r") as f:
+                template = jinja2.Template(f.read())
+            generator = JS(parsed_data, template, output_folder)
+            generator.generate()
     
 if __name__ == "__main__":
     # Set current working directory to the directory of the script

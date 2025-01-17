@@ -1,13 +1,26 @@
-export class {{ sanitize_name(info.title) }} {
+{{ "\n".join(Imports) }}
+
+
+class ApiClient {
     constructor(baseUrl) {
         this.baseUrl = baseUrl;
     }
     
-    async request(endpoint, options = {}) {
-        const response = await fetch(`{{'${this.baseUrl}/${endpoint}'}}`, options);
+    async request(method, path, options = {}) {
+        const url = `${this.baseUrl}${path}`;
+        const response = await fetch(url, {
+            method,
+            ...options
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         return response.json();
     }
 
-    {{ generate_api_methods }}
+    {{ Methods }}
 }
-export default {{ sanitize_name(info.title) }};
+
+{{ Types }}
+
+export default ApiClient;
