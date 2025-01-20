@@ -214,9 +214,14 @@ class {sanitized_name}:
             
             logger.debug(f"Generated method {sanitized_path} with parameters: {input_parameters}")
             output_type = self.get_preferred_output_type(operation)
+            response_model_to_underlying_type = output_type.replace("'", "")
+            is_list = False
+            if(response_model_to_underlying_type.startswith("List[")):
+                response_model_to_underlying_type = response_model_to_underlying_type.replace("List[", "").replace("]", "")
+                is_list = True
             return f"""
     def {sanitized_path}(self, {input_parameters + ", " if input_parameters else ""}**kwargs) -> {output_type}:
-        return self._request("{method}", "{path}".format({request_parameters}), **kwargs, response_model={output_type.replace("'", "")})
+        return self._request("{method}", "{path}".format({request_parameters}), response_model={response_model_to_underlying_type}, response_model_list={is_list}, **kwargs)
             """
 
 class JavaScript(Generator):
