@@ -66,7 +66,7 @@ def main(input_folder: str|None=None, output_folder:str|None=None, settings: Set
 
         # Generate JavaScript client if enabled in settings
         if file_name in settings.Javascript and settings.Javascript[file_name]:
-            with open(os.path.join(folder_dir, "templates", "JavaScript.jinja2"), "r") as f:
+            with open(os.path.join(folder_dir, "templates", "Javascript.jinja2"), "r") as f:
                 template = jinja2.Template(f.read())
             generator = JS(parsed_data, template, output_folder)
             generator.generate()
