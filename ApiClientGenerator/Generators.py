@@ -81,7 +81,7 @@ class Python(Generator):
             for name, schema in self.data.components.schemas.items():
                 if schema.enum:
                     enum_name = Generator.sanitize_string(name)
-                    enum_values = ", ".join([f"{value} = '{value}'" for value in schema.enum])
+                    enum_values = "\n    ".join([f"{value} = '{value}'" for value in schema.enum])
                     enums.append(f"class {enum_name}(Enum):\n    {enum_values}")
         return "\n\n".join(enums)
 
