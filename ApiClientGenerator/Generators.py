@@ -30,6 +30,13 @@ class Generator:
 
 
 class Python(Generator):
+    
+    reserved_python_words = [
+        "False", "None", "True", "and", "as", "assert", "async", "await", "break", "class", "continue",
+        "def", "del", "elif", "else", "except", "finally", "for", "from", "global", "if", "import",
+        "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise", "return", "try", "while", "with", "yield"
+    ]
+    
     def __init__(self, data: Typing.OpenAPI, template: Template, output_folder: str) -> None:
         super().__init__(data, template)
         self.output_folder = output_folder
@@ -81,7 +88,7 @@ class Python(Generator):
             for name, schema in self.data.components.schemas.items():
                 if schema.enum:
                     enum_name = Generator.sanitize_string(name)
-                    enum_values = "\n    ".join([f"{value} = '{value}'" for value in schema.enum])
+                    enum_values = "\n    ".join([f"{'_'+value if value in self.reserved_python_words else value} = '{value}'" for value in schema.enum])
                     enums.append(f"class {enum_name}(Enum):\n    {enum_values}")
         return "\n\n".join(enums)
 
