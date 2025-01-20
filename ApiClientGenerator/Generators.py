@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 import os
 import re
@@ -53,36 +54,6 @@ class Python(Generator):
         logger.info("Python client generation completed")
         return client_code
 
-
-    def sort_classes_by_dependencies(self, type_definitions):
-        logger.debug("Sorting classes by dependencies")
-        dependency_graph = {}
-        class_definitions = {}
-
-        for type_def in type_definitions:
-            class_name = type_def.split()[1]
-            class_definitions[class_name] = type_def
-            dependencies = re.findall(r"List\[(\w+)\]|Dict\[\w+, (\w+)\]", type_def)
-            dependencies = [dep for dep in dependencies if dep]
-            dependency_graph[class_name] = dependencies
-
-        sorted_classes = []
-        visited = set()
-
-        def visit(node):
-            if node not in visited:
-                visited.add(node)
-                for dep in dependency_graph.get(node, []):
-                    visit(dep)
-                sorted_classes.append(node)
-
-        for node in dependency_graph:
-            visit(node)
-
-        sorted_type_definitions = [class_definitions[class_name] for class_name in sorted_classes if class_name in class_definitions]
-        logger.debug(f"Sorted classes: {sorted_classes}")
-        return sorted_type_definitions
-
     def save_client_and_types(self, client_code, type_definitions):
         os.makedirs(os.path.join(self.output_folder, Generator.sanitize_string(self.data.info.title)), exist_ok=True)
         file_path = os.path.join(self.output_folder, Generator.sanitize_string(self.data.info.title), "client.py")
@@ -90,6 +61,7 @@ class Python(Generator):
         with open(file_path, "w") as file:
             file.write(self.template.render(
                 Imports=[
+                    "from __future__ import annotations",
                     "import httpx",
                     "import json",
                     "from typing import Any, Dict, Optional, Union, List, TypeVar, Generic, Type",
@@ -97,11 +69,21 @@ class Python(Generator):
                     "from dataclasses import dataclass",
                     "from dacite import from_dict",
                 ],
-                Enum="",  # Add enum generation logic if needed
+                Enum=self.generate_enums(),
                 DataClass="\n\n".join(type_definitions),
                 Methods=client_code
             ))
         logger.info(f"Client and types saved successfully at {file_path}")
+
+    def generate_enums(self):
+        enums = []
+        if self.data.components.schemas:
+            for name, schema in self.data.components.schemas.items():
+                if schema.enum:
+                    enum_name = Generator.sanitize_string(name)
+                    enum_values = ", ".join([f"{value} = '{value}'" for value in schema.enum])
+                    enums.append(f"class {enum_name}(Enum):\n    {enum_values}")
+        return "\n\n".join(enums)
 
     class TypeGenerator:
         def __init__(self, data: Typing.OpenAPI):
@@ -122,6 +104,8 @@ class Python(Generator):
             logger.debug(f"Generating type for {sanitized_name}")
             fields = []
             if not schema.properties:
+                if schema.enum:
+                    return ""
                 logger.warning(f"Schema {sanitized_name} has no properties")
                 return f"@dataclass\nclass {sanitized_name}:\n    pass"
                 
