@@ -268,14 +268,14 @@ class JavaScript(Generator):
 
     def generate(self):
         self.logger.info("Starting JavaScript client generation")
-        types_generator = JavaScript.TypeGenerator(self.data)
+        types_generator = JavaScript.TypeGenerator(self.data, self.logger)
         types_definitions = types_generator.generate()
         
         if not types_definitions:
             self.logger.warning("No types found")
             return None
         
-        client_generator = JavaScript.ClientGenerator(self.data)
+        client_generator = JavaScript.ClientGenerator(self.data, self.logger)
         client_code = client_generator.generate()
         if not client_code:
             self.logger.warning("No client code found")
