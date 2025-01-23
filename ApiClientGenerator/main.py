@@ -27,9 +27,21 @@ class Settings:
     Javascript: Dict[str, bool] = {}
 
 
-def main(input_folder: str|None=None, output_folder:str|None=None, settings: Settings|None=None) -> None:
+def main(input_folder: str|None=None, output_folder:str|None=None, settings: Settings|None=None, logging_enabled: bool=False) -> None:
     logger.info("Starting client generation")
-    
+    if(logging_enabled):
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        # File logging
+        fh = logging.FileHandler('ApiClientGenerator.log')
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+        # Stdout logging
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+        
     if input_folder is None:
         input_folder = "ToBeGenerated"
     if output_folder is None:
@@ -58,17 +70,17 @@ def main(input_folder: str|None=None, output_folder:str|None=None, settings: Set
         print(f"Generating client for {file_name}")
 
         # Generate Python client if enabled in settings
-        if file_name in settings.Python and settings.Python[file_name]:
+        if "*" in settings.Python or (file_name in settings.Python and settings.Python[file_name]):
             with open(os.path.join(folder_dir, "templates", "Python.jinja2"), "r") as f:
                 template = jinja2.Template(f.read())
-            generator = P(parsed_data, template, output_folder)
+            generator = P(parsed_data, template, logger, output_folder)
             generator.generate()
 
         # Generate JavaScript client if enabled in settings
-        if file_name in settings.Javascript and settings.Javascript[file_name]:
+        if "*" in settings.Javascript or (file_name in settings.Javascript and settings.Javascript[file_name]):
             with open(os.path.join(folder_dir, "templates", "Javascript.jinja2"), "r") as f:
                 template = jinja2.Template(f.read())
-            generator = JS(parsed_data, template, output_folder)
+            generator = JS(parsed_data, template, logger, output_folder)
             generator.generate()
     
 if __name__ == "__main__":
