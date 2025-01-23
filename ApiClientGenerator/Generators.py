@@ -263,8 +263,7 @@ class {sanitized_name}:
             
             return f"""
     def {sanitized_path}(self, {input_parameters + ", " if input_parameters else ""}**kwargs) -> {output_type}:
-        config = Config(cast=[Enum])
-        response = self._request("{method}", "{path}".format({request_parameters}), **kwargs, response_model={output_type.replace("'", "")}, response_model_list={is_list}, config=config)
+        response = self._request("{method}", "{path}".format({request_parameters}), **kwargs, response_model={output_type.replace("'", "")}, response_model_list={is_list})
         return response"""
 
 class JavaScript(Generator):
