@@ -257,13 +257,14 @@ class {sanitized_name}:
             
             if "List[" in output_type:
                 is_list = True
-                output_type = output_type.replace("List[", "").replace("]", "")
+                output_type2 = output_type.replace("List[", "").replace("]", "")
             else:
                 is_list = False
+                output_type2 = output_type
             
             return f"""
     def {sanitized_path}(self, {input_parameters + ", " if input_parameters else ""}**kwargs) -> {output_type}:
-        response = self._request("{method}", "{path}".format({request_parameters}), **kwargs, response_model={output_type.replace("'", "")}, response_model_list={is_list})
+        response = self._request("{method}", "{path}".format({request_parameters}), **kwargs, response_model={output_type2.replace("'", "")}, response_model_list={is_list})
         return response"""
 
 class JavaScript(Generator):
