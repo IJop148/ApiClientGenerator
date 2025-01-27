@@ -417,6 +417,8 @@ class {sanitized_name} {{
             sanitized_path = Generator.sanitize_string(path.replace("{", "").replace("}", ""))
             sanitized_path = f"{method.lower()}_{sanitized_path.removeprefix('_')}"
             
+            path = path.replace("{", "${")
+            
             input_parameters_list = []
             for i in operation.parameters or []:
                 input_parameters_list.append(f"{i.name}")
