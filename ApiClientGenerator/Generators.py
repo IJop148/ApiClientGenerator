@@ -427,7 +427,7 @@ class {sanitized_name} {{
             self.logger.debug(f"Generated method {sanitized_path} with parameters: {input_parameters}")
             return f"""
     async {sanitized_path}({input_parameters + ", " if input_parameters else ""}config = {{}}) {{
-        const url = `{'{this.baseUrl}'}${path}`;
+        const url = `{'${this.baseUrl}'}{path}`;
         const response = await fetch(url, {{
             method: "{method}",
             ...config
