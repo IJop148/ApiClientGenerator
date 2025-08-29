@@ -1,7 +1,5 @@
 {{ "\n".join(Imports) }}
-
 {{ Enum }}
-
 {{ DataClass }}
 
 class ApiClient:
@@ -21,16 +19,12 @@ class ApiClient:
         except json.JSONDecodeError:
             data = response.text
         if(response_model == None or response_model == Any):
-            return data
-        
-        if(type(response_model) == type("TypeDefinition") ):
+            return data        
+        if(type(response_model) == type("StringAsString") ):
             # Model is a string
             return response_model(data)
         else:
             if(response_model_list):
                 return [from_dict(data_class=response_model, data=item) for item in data]
             return from_dict(data_class=response_model, data=data)
-    
     {{ Methods }}
-
-
